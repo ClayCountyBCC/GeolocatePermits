@@ -52,10 +52,37 @@ namespace GeolocatePermits.Models
           VALUES (@applicationName, @errorText, @errorMessage,
             @errorStacktrace, @errorSource, @query);";
 
-      using (IDbConnection db = new SqlConnection(Constants.Get_ConnStr(Constants.csError)))
+      using (IDbConnection db = new SqlConnection(Program.Get_ConnStr(Program.LOG)))
       {
         db.Execute(sql, this);
       }
     }
+
+    public static void SaveEmail(string to, string subject, string body)
+    {
+      string sql = @"
+          INSERT INTO EmailList 
+          (EmailTo, EmailSubject, EmailBody)  
+          VALUES (@To, @Subject, @Body);";
+
+      try
+      {
+        var dbArgs = new Dapper.DynamicParameters();
+        dbArgs.Add("@To", to);
+        dbArgs.Add("@Subject", subject);
+        dbArgs.Add("@Body", body);
+
+
+        using (IDbConnection db = new SqlConnection(Program.Get_ConnStr(Program.LOG)))
+        {
+          db.Execute(sql, dbArgs);
+        }
+      }
+      catch (Exception ex)
+      {
+        new ErrorLog(ex, sql);
+      }
+    }
+
   }
 }
