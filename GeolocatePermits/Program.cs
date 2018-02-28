@@ -20,14 +20,14 @@ namespace GeolocatePermits
     static void Main(string[] args)
     {
       var permits = BasePermit.Get();
-      if (permits.Count == 0)  return;
+      if (permits.Count == 0) return;
       var addresses = (from p in permits
                        select p.LookupKey).Distinct().ToList();
       var parcels = (from p in permits
                      select p.ParcelNo).Distinct().ToList();
       var addressPoints = Point.GetAddressPoints(addresses);
       var parcelPoints = Point.GetParcelPoints(parcels);
-      UpdatePermitData(ref permits, addressPoints, parcelPoints);      
+      UpdatePermitData(ref permits, addressPoints, parcelPoints);
       SavePermits(permits);
     }
 

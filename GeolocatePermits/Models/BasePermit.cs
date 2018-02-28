@@ -47,7 +47,8 @@ namespace GeolocatePermits.Models
         LEFT OUTER JOIN bpASSOC_PERMIT A ON B.BaseID = A.BaseID
         WHERE 
           ISNULL(M.PermitNo, A.PermitNo) IS NOT NULL
-          AND X = 0";
+          AND Date_Row_Created IS NOT NULL
+          AND Project_Address_X != 0";
       return Program.Get_Data<BasePermit>(query, Program.WATSC);
     }
 
