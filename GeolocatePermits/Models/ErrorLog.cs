@@ -43,8 +43,18 @@ namespace GeolocatePermits.Models
       SaveLog();
     }
 
+    private void OutputToConsole()
+    {
+      Console.WriteLine(ErrorText);
+      Console.WriteLine(ErrorMessage);
+      Console.WriteLine(ErrorStacktrace);
+      Console.WriteLine(ErrorSource);
+      Console.WriteLine(Query);
+    }
+
     private void SaveLog()
     {
+      OutputToConsole();
       string sql = @"
           INSERT INTO ErrorData 
           (applicationName, errorText, errorMessage, 

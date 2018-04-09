@@ -31,27 +31,27 @@ namespace GeolocatePermits.Models
       var dp = new DynamicParameters();
       dp.Add("@Keys", LookupKeys);
       string query = @"
-          SELECT
-            OBJECTID,
-            CAST(House AS VARCHAR(50)) + '-' +
-              CASE WHEN LEN(Unit) > 0 THEN '-' + LTRIM(RTRIM(Unit)) ELSE '' END  + 
-              CASE WHEN LEN(PreDir) > 0 THEN '-' + LTRIM(RTRIM(PreDir)) ELSE '' END + 
-              StreetName + '-' + 
-              CASE WHEN LEN(SuffixDir) > 0 THEN '-' + LTRIM(RTRIM(SuffixDir)) ELSE '' END + 
-              CAST(Community AS VARCHAR(50)) +
-              CAST(Zip AS VARCHAR(50)) LookupKey,
-              XCoord X,
-              YCoord Y
-          FROM ADDRESS_SITE
-          WHERE 
-            CAST(House AS VARCHAR(50)) + '-' +
-              CASE WHEN LEN(Unit) > 0 THEN '-' + LTRIM(RTRIM(Unit)) ELSE '' END  + 
-              CASE WHEN LEN(PreDir) > 0 THEN '-' + LTRIM(RTRIM(PreDir)) ELSE '' END + 
-              StreetName + '-' + 
-              CASE WHEN LEN(SuffixDir) > 0 THEN '-' + LTRIM(RTRIM(SuffixDir)) ELSE '' END + 
-              CAST(Community AS VARCHAR(50)) +
-              CAST(Zip AS VARCHAR(50)) IN @Keys
-          ORDER BY OBJECTID DESC";
+        SELECT
+          OBJECTID,
+          CAST(House AS VARCHAR(50)) + '-' +
+            CASE WHEN LEN(Unit) > 0 THEN '-' + LTRIM(RTRIM(Unit)) ELSE '' END  + 
+            CASE WHEN LEN(PreDir) > 0 THEN '-' + LTRIM(RTRIM(PreDir)) ELSE '' END + 
+            StreetName + '-' + 
+            CASE WHEN LEN(SuffixDir) > 0 THEN '-' + LTRIM(RTRIM(SuffixDir)) ELSE '' END + 
+            CAST(Community AS VARCHAR(50)) +
+            CAST(Zip AS VARCHAR(50)) LookupKey,
+            XCoord X,
+            YCoord Y
+        FROM ADDRESS_SITE
+        WHERE 
+          CAST(House AS VARCHAR(50)) + '-' +
+            CASE WHEN LEN(Unit) > 0 THEN '-' + LTRIM(RTRIM(Unit)) ELSE '' END  + 
+            CASE WHEN LEN(PreDir) > 0 THEN '-' + LTRIM(RTRIM(PreDir)) ELSE '' END + 
+            StreetName + '-' + 
+            CASE WHEN LEN(SuffixDir) > 0 THEN '-' + LTRIM(RTRIM(SuffixDir)) ELSE '' END + 
+            CAST(Community AS VARCHAR(50)) +
+            CAST(Zip AS VARCHAR(50)) IN @Keys
+        ORDER BY OBJECTID DESC";
       try
       {
         var addressPoints = Program.Get_Data<Point>(query, dp, Program.GIS);

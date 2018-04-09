@@ -19,8 +19,52 @@ namespace GeolocatePermits
 
     static void Main(string[] args)
     {
+      int a = 0;
+      while (ProcessData() && a < 10)
+      {
+        a += 1;
+      }
+      //for (int a = 0; a < 30; a++)
+      //{
+        
+      //}      
+    }
+
+    static void CheckResults()
+    {
       var permits = BasePermit.Get();
-      if (permits.Count == 0) return;
+      var permitsCount = permits.Count();
+      
+      if(permitsCount > 0 && permitsCount  < 50)
+      {
+        // we're going to email Nancy Parker in some very specific circumstances.
+        var hour = DateTime.Now.Hour;
+        var minute = DateTime.Now.Minute;
+        // If it's between 7 AM and 7:30 AM, or 2 PM and 2:30 PM
+        if (hour == 7 | hour == 14 && minute < 30)
+        {
+          NotifyOfError(permits);
+        }
+      }
+    }
+
+    public static void NotifyOfError(List<BasePermit> permits)
+    {
+      string body = @"You can view them on a report found here: 
+http://claybccreport/Reports/report/Building%20Dept/Invalid%20Addresses%20and%20Parcels
+";
+      ErrorLog.SaveEmail("Nancy.Parker@claycountygov.com", "Invalid Addresses / Parcels found", body);
+    }
+
+    public static bool ProcessData()
+    {
+      bool KeepRunning = false;
+      var permits = BasePermit.Get();
+      if (permits.Count == 0)
+      {
+        return KeepRunning;
+      }
+      KeepRunning = (permits.Count == 1000);
       var addresses = (from p in permits
                        select p.LookupKey).Distinct().ToList();
       var parcels = (from p in permits
@@ -29,6 +73,7 @@ namespace GeolocatePermits
       var parcelPoints = Point.GetParcelPoints(parcels);
       UpdatePermitData(ref permits, addressPoints, parcelPoints);
       SavePermits(permits);
+      return KeepRunning;
     }
 
     public static void UpdatePermitData(ref List<BasePermit> permits, 
@@ -90,6 +135,8 @@ namespace GeolocatePermits
     {
       var dt = new DataTable("GeoCoding");
       dt.Columns.Add("BaseID", typeof(int));
+      dt.Columns.Add("Parcel_Number", typeof(string));
+      dt.Columns.Add("LookupKey", typeof(string));
       dt.Columns.Add("X", typeof(double));
       dt.Columns.Add("Y", typeof(double));
       dt.Columns.Add("Project_Address_X", typeof(double));
@@ -107,18 +154,22 @@ namespace GeolocatePermits
                      select p);
       foreach(BasePermit p in changed)
       {
-        dt.Rows.Add(p.BaseID, p.X, p.Y, p.Project_Address_X, 
-          p.Project_Address_Y, p.Parcel_Centroid_X, p.Parcel_Centroid_Y);
+        dt.Rows.Add(p.BaseID, p.ParcelNo, p.LookupKey,
+          p.X, p.Y, p.Project_Address_X, p.Project_Address_Y, 
+          p.Parcel_Centroid_X, p.Parcel_Centroid_Y);
       }
       string query = @"
         UPDATE B
         SET 
+          B.Geocoded_Parcel = G.Parcel_Number,
+          B.Geocoded_Address = G.LookupKey,
           B.X = G.X,
           B.Y = G.Y,
           B.Project_Address_X = G.Project_Address_X,
           B.Project_Address_Y = G.Project_Address_Y,
           B.Parcel_Centroid_X = G.Parcel_Centroid_X,
-          B.Parcel_Centroid_Y = G.Parcel_Centroid_Y
+          B.Parcel_Centroid_Y = G.Parcel_Centroid_Y,
+          B.Date_Geocoding_Updated = GETDATE()
         FROM bpBASE_PERMIT B
         INNER JOIN @GeoCoding G ON B.BaseID = G.BaseID";
       using (IDbConnection db = new SqlConnection(Get_ConnStr(WATSC)))
@@ -147,9 +198,7 @@ namespace GeolocatePermits
     {
       try
       {
-        using (IDbConnection db =
-          new SqlConnection(
-            Get_ConnStr(cs)))
+        using (IDbConnection db = new SqlConnection(Get_ConnStr(cs)))
         {
           return (List<T>)db.Query<T>(query, dbA, commandTimeout: timeOut);
         }
@@ -165,9 +214,7 @@ namespace GeolocatePermits
     {
       try
       {
-        using (IDbConnection db =
-          new SqlConnection(
-            Get_ConnStr(cs)))
+        using (IDbConnection db = new SqlConnection(Get_ConnStr(cs)))
         {
           return db.Execute(query, dbA);
         }
@@ -181,7 +228,15 @@ namespace GeolocatePermits
 
     public static string Get_ConnStr(string cs)
     {
-      return ConfigurationManager.ConnectionStrings[cs].ConnectionString;
+      try
+      {
+        return ConfigurationManager.ConnectionStrings[cs].ConnectionString;
+      }
+      catch(Exception ex)
+      {
+        new ErrorLog(ex);
+        return null;
+      }
     }
 
   }
